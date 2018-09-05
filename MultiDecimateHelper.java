@@ -65,14 +65,17 @@ public class MultiDecimateHelper extends JFrame{
 		jlist.addKeyListener(new KeyAdapter(){
 			public void keyReleased(KeyEvent e){
 				if(e.getKeyCode() == KeyEvent.VK_ENTER){
-					output.append(alterFrames());
+					AlterFrames a = new AlterFrames();
+					a.execute();
 				}
 			}
 		});
 		jlist.addMouseListener(new MouseAdapter(){
 			public void mouseClicked(MouseEvent e){
-				if(e.getClickCount() == 2)
-					output.append(alterFrames());
+				if(e.getClickCount() == 2){
+					AlterFrames a = new AlterFrames();
+					a.execute();
+				}
 			}				
 		});
 		
@@ -243,29 +246,49 @@ public class MultiDecimateHelper extends JFrame{
 		System.arraycopy(items, 0, selection, 0, items.length);
 	}
 	
-	private String alterFrames(){
-		String s = "";
-		String g;
+	private class AlterFrames extends SwingWorker<String, String>{
+		private String s = "";
+		private String g;
+		private String result = "";
 		
-		for(int i=0;i<selection.length;i++){
-			switch(frames[selection[i]].status()){
-				case 0: frames[selection[i]].setStatus(1);
-						s += "Delete " + frames[selection[i]].number() + "\n";
-						g = frames[selection[i]].toString();
-						listModel.set(selection[i], g);
-						newCount--;
-						break;
-				case 1: frames[selection[i]].setStatus(0);
-						s += "Keep " + frames[selection[i]].number() + "\n";
-						g = frames[selection[i]].toString();
-						listModel.set(selection[i], g);
-						newCount++;
-						break;
+		AlterFrames(){
+		}
+		
+		protected String doInBackground(){
+			for(int i=0;i<selection.length;i++){
+				switch(frames[selection[i]].status()){
+					case 0: frames[selection[i]].setStatus(1);
+							s += "Delete " + frames[selection[i]].number() + "\n";
+							publish(s);
+							s = "";
+							g = frames[selection[i]].toString();
+							listModel.set(selection[i], g);
+							newCount--;
+							break;
+					case 1: frames[selection[i]].setStatus(0);
+							s += "Keep " + frames[selection[i]].number() + "\n";
+							publish(s);
+							s = "";
+							g = frames[selection[i]].toString();
+							listModel.set(selection[i], g);
+							newCount++;
+							break;
+				}
+			}
+			return null;
+		}
+		
+		protected void process(List<String> chunks){
+			for(String text : chunks){
+				result += text;
 			}
 		}
-		return s;
+		
+		protected void done(){
+			output.append(result);
+		}
 	}
-
+	
 	private class OpenFile extends SwingWorker<String, String>{
 		private Scanner input;
 		
